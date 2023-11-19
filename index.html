@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebRTC Chat</title>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+  <div id="localVideo"></div>
+  <div id="remoteVideos"></div>
+  <button id="joinButton">Join Call</button>
+
+  <script>
+    // Initialize your PeerJS connection
+    var PeerID;
+    const peer = new Peer();
+
+    peer.on('open', (id) => {
+        PeerID = id;
+      console.log('My peer ID is: ' + id);
+    });
+
+    // Function to handle joining the call
+    const joinCall = () => {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          // Display local video
+          $('#localVideo').html('<video id="localStream" autoplay muted></video>');
+          $('#localStream')[0].srcObject = stream;
+
+          // Connect to a peer
+          peer.on('call', (incomingCall) => {
+            incomingCall.answer(stream);
+            handleCall(incomingCall);
+          });
+        })
+        .catch((error) => {
+          console.error('Error accessing media devices:', error);
+        });
+    };
+
+    // Function to handle incoming and outgoing calls
+    const handleCall = (call) => {
+      // Display remote video
+      const remoteStreamContainer = $('<div class="remote-stream"></div>');
+      $('#remoteVideos').append(remoteStreamContainer);
+
+      const remoteVideo = document.createElement('video');
+      remoteStreamContainer.append(remoteVideo);
+
+      call.on('stream', (remoteStream) => {
+        remoteVideo.srcObject = remoteStream;
+      });
+    };
+
+    // Event listener for Join Call button
+    $('#joinButton').click(() => {
+      joinCall();
+
+      // Call another peer
+      const calleeId = prompt('Enter the ID of the person you want to call:');
+      const outgoingCall = peer.call(calleeId, null);
+      handleCall(outgoingCall);
+    });
+  </script>
+</body>
+</html>
